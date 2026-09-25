@@ -56,6 +56,15 @@ STM32 Nucleo
 
     ../../../executables/referenceApp/platforms/nucleo_*/**/doc/index
 
+Arduino Portenta H7
++++++++++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+    :glob:
+
+    ../../../executables/referenceApp/platforms/portenta_h7/**/doc/index
+
 Safety
 ++++++
 
