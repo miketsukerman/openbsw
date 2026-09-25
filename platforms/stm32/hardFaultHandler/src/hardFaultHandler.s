@@ -19,13 +19,15 @@
 // RAM addresses are chip-specific - configured via defines.
 //------------------------------------------------------------------------------
 
-// Dump location - use top of SRAM for both F4 (320KB) and G4 (128KB).
+// Dump location - use top of SRAM.
 // The dump region must be reserved by the board linker script (see the board
 // integration).
-// Default: use conservative address that works for G4 (smallest SRAM).
-// G4: SRAM ends at 0x20020000, F4: SRAM ends at 0x20050000
+// G4: SRAM ends at 0x20020000, F4: SRAM ends at 0x20050000,
+// H7 (CM7): AXI SRAM ends at 0x24080000.
 #if defined(STM32_FAMILY_F4)
 .equ NO_INIT_RAM_START, 0x2004FC00
+#elif defined(STM32_FAMILY_H7)
+.equ NO_INIT_RAM_START, 0x2407FC00
 #else
 .equ NO_INIT_RAM_START, 0x2001FC00
 #endif

@@ -93,6 +93,57 @@ void Gpio::enablePortClock(GPIO_TypeDef* port)
         RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
     }
 #endif
+#elif defined(STM32H747xx)
+    if (port == GPIOA)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;
+    }
+    else if (port == GPIOB)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN;
+    }
+    else if (port == GPIOC)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN;
+    }
+    else if (port == GPIOD)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;
+    }
+    else if (port == GPIOE)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOEEN;
+    }
+    else if (port == GPIOF)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOFEN;
+    }
+    else if (port == GPIOG)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOGEN;
+    }
+    else if (port == GPIOH)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOHEN;
+    }
+#if defined(GPIOI)
+    else if (port == GPIOI)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOIEN;
+    }
+#endif
+#if defined(GPIOJ)
+    else if (port == GPIOJ)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOJEN;
+    }
+#endif
+#if defined(GPIOK)
+    else if (port == GPIOK)
+    {
+        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOKEN;
+    }
+#endif
 #endif
     // Read-back for clock stabilization
     uint32_t volatile dummy;
@@ -101,6 +152,8 @@ void Gpio::enablePortClock(GPIO_TypeDef* port)
     dummy = RCC->AHB2ENR;
 #elif defined(STM32F413xx)
     dummy = RCC->AHB1ENR;
+#elif defined(STM32H747xx)
+    dummy = RCC->AHB4ENR;
 #endif
     (void)dummy;
 }

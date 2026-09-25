@@ -27,6 +27,12 @@ static uint32_t const WRITE_TIMEOUT = 100000U;
 #define UART_GET_STATUS(u)    ((u)->ISR)
 #define UART_WRITE_DATA(u, d) ((u)->TDR = (d))
 #define UART_READ_DATA(u)     ((u)->RDR & 0xFFU)
+#elif defined(STM32H747xx)
+#define UART_TX_EMPTY_FLAG    USART_ISR_TXE_TXFNF
+#define UART_RX_READY_FLAG    USART_ISR_RXNE_RXFNE
+#define UART_GET_STATUS(u)    ((u)->ISR)
+#define UART_WRITE_DATA(u, d) ((u)->TDR = (d))
+#define UART_READ_DATA(u)     ((u)->RDR & 0xFFU)
 #endif
 
 static void configureGpio(Uart::UartConfig const& cfg)

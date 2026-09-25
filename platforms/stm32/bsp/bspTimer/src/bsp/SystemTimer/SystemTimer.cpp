@@ -21,8 +21,10 @@ namespace
 uint32_t const DWT_FREQ_MHZ = 96U; // F413ZH: 96 MHz HCLK
 #elif defined(STM32_FAMILY_G4)
 uint32_t const DWT_FREQ_MHZ = 170U; // G474RE: 170 MHz HCLK
+#elif defined(STM32_FAMILY_H7)
+uint32_t const DWT_FREQ_MHZ = 480U; // H747 CM7: DWT counts the 480 MHz CPU clock
 #else
-#error "Define STM32_FAMILY_F4 or STM32_FAMILY_G4"
+#error "Define STM32_FAMILY_F4, STM32_FAMILY_G4 or STM32_FAMILY_H7"
 #endif
 
 // One tick equals one microsecond.

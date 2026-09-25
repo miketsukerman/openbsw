@@ -9,8 +9,15 @@ if (STM32_FAMILY STREQUAL "F4")
     target_include_directories(bspMcu PUBLIC include/3rdparty/st/stm32f4)
 elseif (STM32_FAMILY STREQUAL "G4")
     target_include_directories(bspMcu PUBLIC include/3rdparty/st/stm32g4)
+elseif (STM32_FAMILY STREQUAL "H7")
+    target_include_directories(bspMcu PUBLIC include/3rdparty/st/stm32h7)
 endif ()
 
 target_compile_definitions(
     bspMcu PUBLIC ${STM32_DEVICE_UPPER} STM32_FAMILY_${STM32_FAMILY}
                   CAN_TYPE_${CAN_TYPE})
+
+# Dual-core devices need the active core selected for the CMSIS device header.
+if (DEFINED STM32_CORE)
+    target_compile_definitions(bspMcu PUBLIC CORE_${STM32_CORE})
+endif ()

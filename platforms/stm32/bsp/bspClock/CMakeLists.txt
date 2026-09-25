@@ -3,6 +3,8 @@ if (STM32_FAMILY STREQUAL "F4")
     add_library(bspClock src/clockConfig_f4.cpp)
 elseif (STM32_FAMILY STREQUAL "G4")
     add_library(bspClock src/clockConfig_g4.cpp)
+elseif (STM32_FAMILY STREQUAL "H7")
+    add_library(bspClock src/clockConfig_h7.cpp)
 endif ()
 
 target_include_directories(bspClock PUBLIC include)

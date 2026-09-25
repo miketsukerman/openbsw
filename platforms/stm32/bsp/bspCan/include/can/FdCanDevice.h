@@ -20,7 +20,7 @@ namespace bios
 {
 
 /**
- * \brief Low-level FDCAN hardware abstraction for STM32G4.
+ * \brief Low-level FDCAN hardware abstraction for STM32G4 and STM32H7.
  *
  * Manages an FDCAN peripheral: initialization, bit timing, TX FIFO,
  * RX FIFOs, message-RAM filter elements, and error counters. Used in

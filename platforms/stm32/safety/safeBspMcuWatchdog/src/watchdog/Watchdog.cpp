@@ -14,6 +14,11 @@
 
 #include <cstdio>
 
+// The H7 exposes one independent watchdog per core; the CM7 core uses IWDG1.
+#if defined(STM32H747xx) && !defined(IWDG)
+#define IWDG IWDG1
+#endif
+
 namespace safety
 {
 namespace bsp

@@ -9,16 +9,22 @@ if (NOT BUILD_EXECUTABLE STREQUAL "unitTest")
         include(${CMAKE_CURRENT_LIST_DIR}/cmake/stm32f413zh.cmake)
     elseif (STM32_CHIP STREQUAL "STM32G474RE")
         include(${CMAKE_CURRENT_LIST_DIR}/cmake/stm32g474re.cmake)
+    elseif (STM32_CHIP STREQUAL "STM32H747XI")
+        include(${CMAKE_CURRENT_LIST_DIR}/cmake/stm32h747xi_cm7.cmake)
     else ()
         message(
             FATAL_ERROR
-                "Unsupported STM32_CHIP: ${STM32_CHIP}. Supported: STM32F413ZH, STM32G474RE"
+                "Unsupported STM32_CHIP: ${STM32_CHIP}. Supported: STM32F413ZH, STM32G474RE, STM32H747XI"
         )
     endif ()
 
     # 3rdparty modules - RTOS
     if (BUILD_TARGET_RTOS STREQUAL "FREERTOS")
-        add_subdirectory(3rdparty/freertos_cm4_sysTick)
+        if (STM32_CORE STREQUAL "CM7")
+            add_subdirectory(3rdparty/freertos_cm7_sysTick)
+        else ()
+            add_subdirectory(3rdparty/freertos_cm4_sysTick)
+        endif ()
     elseif (BUILD_TARGET_RTOS STREQUAL "THREADX")
         add_subdirectory(3rdparty/threadx)
     endif ()
