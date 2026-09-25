@@ -91,17 +91,13 @@ TEST(ServiceAnnouncerTask, test_ServiceAnnouncerTask_assignment)
     task1.init(10U, 11U, 12U, 13U, 14U, 15U);
     task2.init(11U, 12U, 13U, 14U, 15U, 16U);
 
-    auto service = ::someip::make<ServiceDescription>();
-    task1.copyTo(service);
-
     ServiceAnnouncerTask* other = &task1;
     task1                       = *other;
-    EXPECT_EQ(10U, service.serviceId);
-    EXPECT_EQ(11U, service.instanceId);
+    EXPECT_EQ(10U, task1.getService().serviceId);
+    EXPECT_EQ(11U, task1.getService().instanceId);
 
-    task2.copyTo(service);
     task1 = task2;
-    EXPECT_EQ(11U, service.serviceId);
-    EXPECT_EQ(12U, service.instanceId);
+    EXPECT_EQ(11U, task1.getService().serviceId);
+    EXPECT_EQ(12U, task1.getService().instanceId);
 }
 } // anonymous namespace
