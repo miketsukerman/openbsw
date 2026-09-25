@@ -19,6 +19,12 @@ namespace bios
 // FDCAN2 starts at SRAMCAN_BASE + 0x350
 // FDCAN3 starts at SRAMCAN_BASE + 0x6A0
 //
+// STM32H7: the message RAM (2560 words shared between instances) has a
+// software-configurable layout. This driver programs the layout registers
+// (SIDFC/XIDFC/RXF0C/RXF1C/RXBC/TXEFC/TXBC and RXESC/TXESC with 64-byte
+// data fields) to mirror the fixed G4 layout exactly, so all offsets and
+// element strides below apply to both families.
+//
 // Layout within each instance (offsets from instance base; RX/TX elements
 // are spaced 18 words / 72 bytes apart regardless of configured data size):
 //   Standard ID filters: 28 elements x  1 word  = 28 words  (0x000 - 0x06F)
@@ -93,6 +99,17 @@ FdCanDevice::FdCanDevice(Config const& config, ::etl::delegate<void()> frameSent
 
 void FdCanDevice::enablePeripheralClock()
 {
+#if defined(STM32_FAMILY_H7)
+    // Enable FDCAN clock on APB1H
+    RCC->APB1HENR |= RCC_APB1HENR_FDCANEN;
+    uint32_t volatile dummy = RCC->APB1HENR;
+    (void)dummy;
+
+    // Select FDCAN kernel clock = HSE (FDCANSEL=00 in D2CCIP1R[29:28]).
+    // HSE (25 MHz on the Portenta H7) is PLL-independent, so the CAN bit
+    // timing stays valid even if the PLL bring-up falls back to HSI sysclk.
+    RCC->D2CCIP1R &= ~RCC_D2CCIP1R_FDCANSEL;
+#else
     // Enable FDCAN clock on APB1
     RCC->APB1ENR1 |= RCC_APB1ENR1_FDCANEN;
     uint32_t volatile dummy = RCC->APB1ENR1;
@@ -101,6 +118,7 @@ void FdCanDevice::enablePeripheralClock()
     // Select FDCAN kernel clock = PCLK1 (FDCANSEL=10 in CCIPR[25:24])
     // Default after reset is HSE (00), which may not be enabled.
     RCC->CCIPR = (RCC->CCIPR & ~RCC_CCIPR_FDCANSEL) | RCC_CCIPR_FDCANSEL_1;
+#endif
 }
 
 void FdCanDevice::configureGpio()
@@ -182,12 +200,43 @@ void FdCanDevice::configureBitTiming()
 
 void FdCanDevice::configureMessageRam()
 {
+#if defined(STM32_FAMILY_H7)
+    // STM32H7 has a software-configurable message RAM layout. Program it to
+    // mirror the fixed G4 layout (see the layout comment above), with 64-byte
+    // data fields so the 18-word element stride matches.
+    uint32_t const wordBase
+        = static_cast<uint32_t>((getInstanceRamBase(fConfig.baseAddress) - SRAMCAN_BASE) / 4U);
+
+    // Standard ID filters: 28 elements at instance offset 0x000. LSS starts
+    // at 0 (no list filtering); configureFilterList() raises it as needed.
+    fConfig.baseAddress->SIDFC = ((wordBase + (STD_FILTER_OFFSET / 4U)) << FDCAN_SIDFC_FLSSA_Pos)
+                                 & FDCAN_SIDFC_FLSSA_Msk;
+    // Extended ID filters: none
+    fConfig.baseAddress->XIDFC = 0U;
+    // RX FIFO0: 3 elements at instance offset 0x0B0
+    fConfig.baseAddress->RXF0C
+        = (((wordBase + (RX_FIFO0_OFFSET / 4U)) << FDCAN_RXF0C_F0SA_Pos) & FDCAN_RXF0C_F0SA_Msk)
+          | (3U << FDCAN_RXF0C_F0S_Pos);
+    // RX FIFO1, dedicated RX buffers, TX event FIFO: unused
+    fConfig.baseAddress->RXF1C = 0U;
+    fConfig.baseAddress->RXBC  = 0U;
+    fConfig.baseAddress->TXEFC = 0U;
+    // TX buffers: 3 FIFO elements at instance offset 0x278 (TFQM=0)
+    fConfig.baseAddress->TXBC
+        = (((wordBase + (TX_BUFFER_OFFSET / 4U)) << FDCAN_TXBC_TBSA_Pos) & FDCAN_TXBC_TBSA_Msk)
+          | (3U << FDCAN_TXBC_TFQS_Pos);
+    // 64-byte data fields -> 18-word elements, matching ELEMENT_SIZE
+    fConfig.baseAddress->RXESC = (7U << FDCAN_RXESC_F0DS_Pos) | (7U << FDCAN_RXESC_F1DS_Pos)
+                                 | (7U << FDCAN_RXESC_RBDS_Pos);
+    fConfig.baseAddress->TXESC = (7U << FDCAN_TXESC_TBDS_Pos);
+#else
     // STM32G4 has fixed message RAM layout - no configuration registers.
     // RXGFC configures global filter behavior and list sizes only.
     fConfig.baseAddress->RXGFC = (0U << FDCAN_RXGFC_LSS_Pos) | (0U << FDCAN_RXGFC_LSE_Pos);
 
     // TX buffer: use FIFO/queue mode
     fConfig.baseAddress->TXBC = 0U; // FIFO mode (TFQM=0)
+#endif
 }
 
 bool FdCanDevice::init()
@@ -443,10 +492,19 @@ uint8_t FdCanDevice::getRxErrorCounter() const
 
 void FdCanDevice::configureAcceptAllFilter()
 {
+#if defined(STM32_FAMILY_H7)
+    // Accept all frames: global filter accepts non-matching into FIFO0, and
+    // no standard filter list is active (LSS stays 0 in SIDFC).
+    fConfig.baseAddress->GFC
+        = (0U << FDCAN_GFC_ANFS_Pos)    // Accept non-matching std into RX FIFO0
+          | (0U << FDCAN_GFC_ANFE_Pos); // Accept non-matching ext into RX FIFO0
+    fConfig.baseAddress->SIDFC &= ~FDCAN_SIDFC_LSS_Msk;
+#else
     // Accept all frames: set global filter to accept non-matching into FIFO0
     fConfig.baseAddress->RXGFC
         = (0U << FDCAN_RXGFC_ANFS_Pos)    // Accept non-matching std into RX FIFO0
           | (0U << FDCAN_RXGFC_ANFE_Pos); // Accept non-matching ext into RX FIFO0
+#endif
 }
 
 void FdCanDevice::configureFilterList(::etl::span<uint32_t const> idList)
@@ -457,10 +515,19 @@ void FdCanDevice::configureFilterList(::etl::span<uint32_t const> idList)
     // surplus entries are ignored.
     size_t const count = (idList.size() < STD_FILTER_COUNT) ? idList.size() : STD_FILTER_COUNT;
 
+#if defined(STM32_FAMILY_H7)
+    // Reject non-matching; the standard list size lives in SIDFC on the H7
+    fConfig.baseAddress->GFC = (2U << FDCAN_GFC_ANFS_Pos)    // Reject non-matching std
+                               | (2U << FDCAN_GFC_ANFE_Pos); // Reject non-matching ext
+    fConfig.baseAddress->SIDFC
+        = (fConfig.baseAddress->SIDFC & ~FDCAN_SIDFC_LSS_Msk)
+          | ((static_cast<uint32_t>(count) << FDCAN_SIDFC_LSS_Pos) & FDCAN_SIDFC_LSS_Msk);
+#else
     // Reject non-matching, configure standard ID filter elements
     fConfig.baseAddress->RXGFC = (2U << FDCAN_RXGFC_ANFS_Pos)   // Reject non-matching std
                                  | (2U << FDCAN_RXGFC_ANFE_Pos) // Reject non-matching ext
                                  | (static_cast<uint32_t>(count) << FDCAN_RXGFC_LSS_Pos);
+#endif
 
     // Write filter elements to message RAM (standard filter area)
     uint32_t* filterRam = reinterpret_cast<uint32_t*>(ramBase + STD_FILTER_OFFSET);

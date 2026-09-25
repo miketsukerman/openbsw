@@ -16,11 +16,25 @@ if (NOT DEFINED _ARCH_FLAGS)
     set(_ARCH_FLAGS "")
 endif ()
 
+# Target CPU/FPU are configurable so a single toolchain file supports both the
+# Cortex-M4F targets (default) and Cortex-M7 targets (e.g. Portenta H7 with
+# double-precision FPU: OPENBSW_ARM_CPU=cortex-m7, OPENBSW_ARM_FPU=fpv5-d16).
+if (NOT DEFINED OPENBSW_ARM_CPU)
+    set(OPENBSW_ARM_CPU
+        "cortex-m4"
+        CACHE STRING "ARM CPU passed to -mcpu")
+endif ()
+if (NOT DEFINED OPENBSW_ARM_FPU)
+    set(OPENBSW_ARM_FPU
+        "fpv4-sp-d16"
+        CACHE STRING "ARM FPU passed to -mfpu")
+endif ()
+
 set(_ARCH_FLAGS
     "${_ARCH_FLAGS} \
-    -mcpu=cortex-m4 \
+    -mcpu=${OPENBSW_ARM_CPU} \
     -mfloat-abi=hard \
-    -mfpu=fpv4-sp-d16 \
+    -mfpu=${OPENBSW_ARM_FPU} \
     -fmessage-length=0")
 
 if (NOT DEFINED _CC_CXX_COMMON)
@@ -73,11 +87,12 @@ set(_EXE_LINKER_FLAGS
     -Wl,--gc-sections \
     -Wl,-Map,application.map,--cref")
 
-set(_ASM_FLAGS "-g -mcpu=cortex-m4")
+set(_ASM_FLAGS "-g -mcpu=${OPENBSW_ARM_CPU}")
 
 if (DEFINED CMAKE_CXX_FLAGS)
     # Check if our toolchain flags are already present
-    string(FIND "${CMAKE_CXX_FLAGS}" "-mcpu=cortex-m4" _TOOLCHAIN_FLAGS_FOUND)
+    string(FIND "${CMAKE_CXX_FLAGS}" "-mcpu=${OPENBSW_ARM_CPU}"
+                _TOOLCHAIN_FLAGS_FOUND)
     if (_TOOLCHAIN_FLAGS_FOUND EQUAL -1)
         set(CMAKE_CXX_FLAGS
             "${_CXX_FLAGS} ${CMAKE_CXX_FLAGS}"
@@ -89,7 +104,8 @@ endif ()
 
 if (DEFINED CMAKE_C_FLAGS)
     # Check if our toolchain flags are already present
-    string(FIND "${CMAKE_C_FLAGS}" "-mcpu=cortex-m4" _TOOLCHAIN_FLAGS_FOUND)
+    string(FIND "${CMAKE_C_FLAGS}" "-mcpu=${OPENBSW_ARM_CPU}"
+                _TOOLCHAIN_FLAGS_FOUND)
     if (_TOOLCHAIN_FLAGS_FOUND EQUAL -1)
         set(CMAKE_C_FLAGS
             "${_C_FLAGS} ${CMAKE_C_FLAGS}"
