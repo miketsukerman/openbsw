@@ -42,49 +42,67 @@ static constexpr uint16_t exampleEventGroupId = 0x8001U;
 static constexpr uint16_t servicePort         = 30501U;
 static constexpr uint16_t clientPort          = 30502U;
 
-static ::someip::ServiceDescription const providedEventGroupDescription{
-    0U,
-    providedServiceTtl,
+constexpr ::someip::ServiceDescription makeServiceDescription(
+    ::someip::service_id::type const serviceId,
+    ::someip::instance_id::type const instanceId,
+    ::someip::major_version::type const majorVersion,
+    ::someip::eventgroup_id::type const eventGroup,
+    ::someip::ttl::type const ttl,
+    ::ip::IPAddress const ipAddress,
+    ::someip::port::type const port,
+    ::someip::proto::type const proto)
+{
+    return {
+        /* minorVersion */ 0U,
+        /* ttl */ ttl,
+        /* serviceId */ serviceId,
+        /* instanceId */ instanceId,
+        /* eventGroup */ eventGroup,
+        /* ipAddress */ ipAddress,
+        /* port */ port,
+        /* proto */ proto,
+        /* majorVersion */ majorVersion};
+}
+
+static constexpr ::someip::ServiceDescription providedEventGroupDescription = makeServiceDescription(
     providedServiceId,
     defaultInstanceId,
+    defaultMajorVersion,
     exampleEventGroupId,
+    providedServiceTtl,
     ::eth0::IP_ADDRESS,
     servicePort,
-    ::someip::proto::SD_L4_PROTO_UDP,
-    defaultMajorVersion};
+    ::someip::proto::SD_L4_PROTO_UDP);
 
-static ::someip::ServiceDescription const providedServiceDescription{
-    0U,
-    providedServiceTtl,
+static constexpr ::someip::ServiceDescription providedServiceDescription = makeServiceDescription(
     providedServiceId,
     defaultInstanceId,
+    defaultMajorVersion,
     ::someip::eventgroup_id::ALL,
+    providedServiceTtl,
     ::eth0::IP_ADDRESS,
     servicePort,
-    ::someip::proto::SD_L4_PROTO_UDP,
-    defaultMajorVersion};
+    ::someip::proto::SD_L4_PROTO_UDP);
 
-static ::someip::ServiceDescription const consumedEventGroupDescription{
-    0U,
-    consumedServiceTtl,
+static constexpr ::someip::ServiceDescription consumedEventGroupDescription = makeServiceDescription(
     consumedServiceId,
     defaultInstanceId,
+    defaultMajorVersion,
     exampleEventGroupId,
+    consumedServiceTtl,
     remoteServiceIp,
     clientPort,
-    ::someip::proto::SD_L4_PROTO_UDP,
-    defaultMajorVersion};
+    ::someip::proto::SD_L4_PROTO_UDP);
 
-static ::someip::ServiceDescription const consumedServiceDescription{
-    0U,
-    consumedServiceTtl,
+static constexpr ::someip::ServiceDescription consumedServiceDescription = makeServiceDescription(
     consumedServiceId,
     defaultInstanceId,
+    defaultMajorVersion,
     ::someip::eventgroup_id::ALL,
+    consumedServiceTtl,
     remoteServiceIp,
     clientPort,
-    ::someip::proto::SD_L4_PROTO_UDP,
-    defaultMajorVersion};
+    ::someip::proto::SD_L4_PROTO_UDP);
 
 } // namespace
 

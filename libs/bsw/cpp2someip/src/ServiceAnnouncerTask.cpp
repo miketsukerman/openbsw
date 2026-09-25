@@ -83,15 +83,18 @@ void ServiceAnnouncerTask::initFrom(
     TaskType const type)
 {
     _service   = service;
-    _destination  = address;
-    _unicast   = unicast;
-    _timestamp = timestamp;
-    _type      = type;
+    _destination = address;
+    _unicast     = unicast;
+    _timestamp   = timestamp;
+    _type        = type;
 }
 
 bool ServiceAnnouncerTask::isSame(ServiceDescription const& service) const
 {
     ServiceKey const key = getServiceKey(_service);
+    bool const eventGroupOk
+        = ((key.eventGroup == eventgroup_id::ALL) || (service.eventGroup == eventgroup_id::ALL)
+           || (key.eventGroup == service.eventGroup));
     bool const majorVersionOk
         = ((key.majorVersion == major_version::ANY) || (key.majorVersion == service.majorVersion));
     bool const minorVersionOk
@@ -101,7 +104,7 @@ bool ServiceAnnouncerTask::isSame(ServiceDescription const& service) const
     return (
         (key.serviceId == service.serviceId)
         && ((key.instanceId == service.instanceId) || (key.instanceId == instance_id::ANY))
-        && majorVersionOk && minorVersionOk);
+        && eventGroupOk && majorVersionOk && minorVersionOk);
 }
 
 bool ServiceAnnouncerTask::containsEventGroup() const
