@@ -1,0 +1,85 @@
+..
+   *******************************************************************************
+   Copyright (c) 2026 An Dao
+
+   This program and the accompanying materials are made available under the
+   terms of the Apache License Version 2.0 which is available at
+   https://www.apache.org/licenses/LICENSE-2.0
+
+   SPDX-License-Identifier: Apache-2.0
+   *******************************************************************************
+
+.. _portenta_h7_CanSystem:
+
+CAN System
+==========
+
+Overview
+--------
+
+The ``CanSystem`` implements the ``ICanSystem`` interface for the Arduino Portenta H7
+using the STM32H747XI's FDCAN1 peripheral (PH14 RX / PH13 TX, AF9), which is routed
+to the onboard CAN FD transceiver and screw terminal of the Portenta Hat Carrier. It manages a single ``FdCanTransceiver``
+(``CAN_0``), participates in the lifecycle as a ``SingleContextLifecycleComponent``
+running in the ``TASK_CAN`` context, and provides the ``extern "C"`` ISR trampolines.
+It is registered as an ``etl::singleton`` so the ISR handlers can reach the instance
+without global variables.
+
+Hardware Configuration
+----------------------
+
+FDCAN1 uses PH14 (RX) and PH13 (TX), alternate function AF9. The Hat Carrier's onboard CAN
+transceiver is required to drive the bus. Bit timing at 25 MHz (HSE) kernel clock:
+prescaler 5 (5 MHz time quantum), 10 TQ per bit (1 sync + 7 seg1 + 2 seg2),
+giving 500 kbit/s with a sample point of 80 %.
+
+Lifecycle
+---------
+
+``init()`` only signals ``transitionDone()`` - the peripheral is untouched until
+``run()``, which:
+
+1. Enables the ``CanRxRunnable``.
+2. Initializes and opens the ``FdCanTransceiver`` (FDCAN1 register setup, accept-all
+   filter, normal mode).
+3. Enables the RX FIFO 0 interrupt and configures the NVIC:
+
+   .. code-block:: c++
+
+      FDCAN1->IE  = FDCAN_IE_RF0NE;
+      FDCAN1->ILS = 0U;
+      FDCAN1->ILE = FDCAN_ILE_EINT0;
+
+      NVIC_SetPriority(FDCAN1_IT0_IRQn, FDCAN_IRQ_PRIORITY);
+      NVIC_SetPriority(FDCAN1_IT1_IRQn, FDCAN_IRQ_PRIORITY);
+      NVIC_ClearPendingIRQ(FDCAN1_IT0_IRQn);
+      NVIC_ClearPendingIRQ(FDCAN1_IT1_IRQn);
+      NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+      NVIC_EnableIRQ(FDCAN1_IT1_IRQn);
+
+   Under FreeRTOS, ``FDCAN_IRQ_PRIORITY`` must stay numerically greater than or
+   equal to ``configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY`` so the ISRs can
+   safely use ``FromISR`` APIs.
+
+4. Schedules a periodic 50 ms timer that runs the ``CanTxRunnable``.
+
+``shutdown()`` closes and shuts down the transceiver and disables the RX runnable.
+
+Interrupt Handling
+------------------
+
+With ``ILS = 0`` all FDCAN1 interrupt sources are routed to interrupt line 0 (only
+``EINT0`` is enabled), so ``FDCAN1_IT0_IRQHandler`` handles both RX and TX events while
+``FDCAN1_IT1_IRQHandler`` / ``call_can_isr_TX()`` are empty. ``call_can_isr_RX()``
+reads ``FDCAN1->IR`` once and:
+
+- on ``RF0N``, reads pending frames from the hardware FIFO into the software queue
+  under lock (``FdCanTransceiver::receiveInterrupt``) and, if frames were received,
+  dispatches the ``CanRxRunnable`` into the ``TASK_CAN`` context;
+- on ``TC``, forwards the TX-complete event to ``FdCanTransceiver::transmitInterrupt``.
+
+The ``CanRxRunnable`` calls ``receiveTask()``, which drains the software queue and
+notifies the registered frame listeners. The ``CanTxRunnable`` calls
+``FdCanTransceiver::pollTxCallback(CAN_0)``, which invokes the sent listener of
+completed transmissions; the 50 ms timer guarantees this poll runs even when a
+dispatch from the ISR is dropped by the async dedup logic.

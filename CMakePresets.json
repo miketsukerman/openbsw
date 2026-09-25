@@ -108,6 +108,26 @@
             }
         },
         {
+            "name": "portenta-h7-freertos-gcc",
+            "generator": "Ninja Multi-Config",
+            "displayName": "Arduino Portenta H7 FreeRTOS configuration (GCC)",
+            "description": "Configure for Arduino Portenta H7 (Cortex-M7) platform with FreeRTOS using ARM GCC toolchain",
+            "inherits": "_config-base",
+            "toolchainFile": "${sourceDir}/cmake/toolchains/ArmNoneEabi-gcc.cmake",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "BUILD_EXECUTABLE": "referenceApp",
+                "BUILD_TARGET_PLATFORM": "PORTENTA_H7",
+                "BUILD_TARGET_RTOS": "FREERTOS",
+                "STM32_CHIP": "STM32H747XI",
+                "CMAKE_ASM_FLAGS_RELWITHDEBINFO": "-g3",
+                "CMAKE_CONFIGURATION_TYPES": "RelWithDebInfo;Debug;Release",
+                "CMAKE_C_FLAGS_RELWITHDEBINFO": "-g3 -O2 -DNDEBUG",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-g3 -O2 -DNDEBUG",
+                "CMAKE_DEFAULT_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "nucleo-g474re-threadx-gcc",
             "generator": "Ninja Multi-Config",
             "displayName": "NUCLEO-G474RE ThreadX configuration (GCC)",
@@ -359,6 +379,12 @@
             "displayName": "NUCLEO-G474RE ThreadX build (GCC)",
             "description": "Build reference application for NUCLEO-G474RE platform with ThreadX and GCC",
             "configurePreset": "nucleo-g474re-threadx-gcc"
+        },
+        {
+            "name": "portenta-h7-freertos-gcc",
+            "displayName": "Arduino Portenta H7 FreeRTOS build (GCC)",
+            "description": "Build reference application for Arduino Portenta H7 platform with FreeRTOS and GCC",
+            "configurePreset": "portenta-h7-freertos-gcc"
         },
         {
             "name": "nucleo-f413zh-freertos-gcc",

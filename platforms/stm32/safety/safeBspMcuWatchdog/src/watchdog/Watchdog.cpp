@@ -19,6 +19,17 @@
 #define IWDG IWDG1
 #endif
 
+// The H7 reports reset causes in RCC->RSR instead of RCC->CSR.
+#if defined(STM32H747xx)
+#define WATCHDOG_RESET_STATUS_REG (RCC->RSR)
+#define WATCHDOG_RESET_FLAG RCC_RSR_IWDG1RSTF
+#define WATCHDOG_RESET_REMOVE_FLAG RCC_RSR_RMVF
+#else
+#define WATCHDOG_RESET_STATUS_REG (RCC->CSR)
+#define WATCHDOG_RESET_FLAG RCC_CSR_IWDGRSTF
+#define WATCHDOG_RESET_REMOVE_FLAG RCC_CSR_RMVF
+#endif
+
 namespace safety
 {
 namespace bsp
@@ -124,12 +135,12 @@ bool Watchdog::checkWatchdogConfiguration(uint32_t timeout, uint32_t clockSpeed)
     return (actualPrescaler == expectedPrescaler) && (actualReload == expectedReload);
 }
 
-bool Watchdog::isResetFromWatchdog() { return (RCC->CSR & RCC_CSR_IWDGRSTF) != 0U; }
+bool Watchdog::isResetFromWatchdog() { return (WATCHDOG_RESET_STATUS_REG & WATCHDOG_RESET_FLAG) != 0U; }
 
 void Watchdog::clearResetFlag()
 {
     // Writing RMVF bit clears all reset flags
-    RCC->CSR |= RCC_CSR_RMVF;
+    WATCHDOG_RESET_STATUS_REG |= WATCHDOG_RESET_REMOVE_FLAG;
 }
 
 uint32_t Watchdog::getWatchdogServiceCounter() { return watchdogServiceCounter; }
