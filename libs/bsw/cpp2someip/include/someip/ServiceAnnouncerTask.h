@@ -55,7 +55,7 @@ public:
 
     void setEndpoint(::ip::IPAddress const& address, uint16_t port);
 
-    void copyTo(ServiceDescription& service) const;
+    ServiceDescription const& getService() const;
 
     bool isSame(ServiceDescription const& service) const;
 
@@ -78,15 +78,8 @@ public:
 
 private:
     uint64_t _timestamp;
-    ::ip::IPEndpoint _endpoint;
+    ServiceDescription _service;
     ::ip::IPAddress _destination;
-    ttl::type _ttl;
-    minor_version::type _minorVersion;
-    service_id::type _serviceId;
-    instance_id::type _instanceId;
-    eventgroup_id::type _eventgroup;
-    major_version::type _majorVersion;
-    uint8_t _proto;
 
     TaskType _type;
     bool _unicast;
@@ -97,10 +90,12 @@ private:
  */
 inline void ServiceAnnouncerTask::setMinorVersion(minor_version::type const minorVersion)
 {
-    _minorVersion = minorVersion;
+    _service.minorVersion = minorVersion;
 }
 
-inline void ServiceAnnouncerTask::setProto(uint8_t const proto) { _proto = proto; }
+inline void ServiceAnnouncerTask::setProto(uint8_t const proto) { _service.proto = proto; }
+
+inline ServiceDescription const& ServiceAnnouncerTask::getService() const { return _service; }
 
 inline ::ip::IPAddress const& ServiceAnnouncerTask::getDestinationAddress() const
 {

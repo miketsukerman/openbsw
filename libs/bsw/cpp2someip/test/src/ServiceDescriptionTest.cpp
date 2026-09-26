@@ -222,4 +222,38 @@ TEST(ServiceDescription, test_ServiceDescription_assignment)
     EXPECT_EQ(15U, b.port);
     EXPECT_EQ(16U, b.proto);
 }
+
+TEST(ServiceDescription, test_ServiceKey_roundtrip_and_field_preservation)
+{
+    auto description         = ::someip::make<ServiceDescription>();
+    description.serviceId    = 0x1111U;
+    description.instanceId   = 0x2222U;
+    description.eventGroup   = 0x3333U;
+    description.majorVersion = 0x44U;
+    description.minorVersion = 0x55U;
+    description.ttl          = 0x6666U;
+    description.ipAddress    = ::ip::make_ip4(192U, 0U, 2U, 44U);
+    description.port         = 0x7777U;
+    description.proto        = 0x88U;
+
+    ::someip::ServiceKey const key = ::someip::getServiceKey(description);
+    EXPECT_EQ(0x1111U, key.serviceId);
+    EXPECT_EQ(0x2222U, key.instanceId);
+    EXPECT_EQ(0x3333U, key.eventGroup);
+    EXPECT_EQ(0x44U, key.majorVersion);
+
+    ::someip::ServiceKey const updatedKey{0xAAAAU, 0xBBBBU, 0xCCCCU, 0xDDU};
+    ::someip::setServiceKey(description, updatedKey);
+
+    EXPECT_EQ(0xAAAAU, description.serviceId);
+    EXPECT_EQ(0xBBBBU, description.instanceId);
+    EXPECT_EQ(0xCCCCU, description.eventGroup);
+    EXPECT_EQ(0xDDU, description.majorVersion);
+
+    EXPECT_EQ(0x55U, description.minorVersion);
+    EXPECT_EQ(0x6666U, description.ttl);
+    EXPECT_EQ(::ip::make_ip4(192U, 0U, 2U, 44U), description.ipAddress);
+    EXPECT_EQ(0x7777U, description.port);
+    EXPECT_EQ(0x88U, description.proto);
+}
 } // anonymous namespace
