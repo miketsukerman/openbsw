@@ -17,8 +17,9 @@
  * bootloader. Flash bank 2 (1 MB at 0x08100000) extends contiguously.
  *
  * RAM: 512 KB AXI SRAM (D1 domain) at 0x24000000. The startup code and the
- * FreeRTOS SysTick port run entirely from this region; DTCM/D2/D3 SRAM are
- * not used in this first iteration.
+ * FreeRTOS SysTick port run entirely from this region. D2 SRAM3 (32 KB at
+ * 0x30040000) holds the Ethernet DMA descriptors and frame buffers; it is
+ * configured non-cacheable via the MPU by the Ethernet driver.
  */
 
 ENTRY(Reset_Handler)
@@ -32,6 +33,8 @@ MEMORY
     /* Top 1 KB (0x2407FC00-0x24080000) is reserved for the hard fault
      * handler dump region and survives reset (never initialized here). */
     RAM   (rwx) : ORIGIN = 0x24000000, LENGTH = 511K
+    /* D2 SRAM3: Ethernet DMA descriptors + buffers (non-cacheable region) */
+    SRAM3 (rw)  : ORIGIN = 0x30040000, LENGTH = 32K
 }
 
 SECTIONS
@@ -137,6 +140,15 @@ SECTIONS
         . = . + _Min_Stack_Size;
         . = ALIGN(8);
     } > RAM
+
+    /* Ethernet DMA descriptors and frame buffers. NOLOAD: the driver fully
+     * initializes this memory before starting the DMA. */
+    .eth_sram (NOLOAD) :
+    {
+        . = ALIGN(32);
+        *(.eth_sram)
+        *(.eth_sram*)
+    } > SRAM3
 
     _estack = ORIGIN(RAM) + LENGTH(RAM);
 

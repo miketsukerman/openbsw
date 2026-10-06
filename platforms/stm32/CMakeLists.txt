@@ -39,6 +39,8 @@ if (NOT BUILD_EXECUTABLE STREQUAL "unitTest")
 
     # Other modules
     add_subdirectory(hardFaultHandler)
+
+    add_subdirectory(lwipSysArch)
 else ()
     # Unit-test builds compile the transceivers against mock devices.
     add_subdirectory(bsp)

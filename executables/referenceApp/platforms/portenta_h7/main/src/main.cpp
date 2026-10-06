@@ -13,6 +13,9 @@
 #include "lifecycle/StaticBsp.h"
 #include "mcu/mcu.h"
 #include "systems/CanSystem.h"
+#ifdef PLATFORM_SUPPORT_ETHERNET
+#include "systems/PortentaEthernetSystem.h"
+#endif
 #if defined(CONSOLE_OVER_USB_CDC)
 #include "systems/UsbSystem.h"
 #endif
@@ -70,6 +73,9 @@ StaticBsp staticBsp;
 StaticBsp& getStaticBsp() { return staticBsp; }
 
 ::etl::typed_storage<::systems::CanSystem> canSystem;
+#ifdef PLATFORM_SUPPORT_ETHERNET
+::etl::typed_storage<::systems::PortentaEthernetSystem> ethernetDriverSystem;
+#endif
 #if defined(CONSOLE_OVER_USB_CDC)
 ::etl::typed_storage<::systems::UsbSystem> usbSystem;
 #endif
@@ -85,6 +91,10 @@ void platformLifecycleAdd(::lifecycle::LifecycleManager& lifecycleManager, uint8
     if (level == 2U)
     {
         lifecycleManager.addComponent("can", canSystem.create(TASK_CAN), level);
+#ifdef PLATFORM_SUPPORT_ETHERNET
+        lifecycleManager.addComponent(
+            "portenta-eth", ethernetDriverSystem.create(TASK_ETHERNET), level);
+#endif
     }
 }
 } // namespace platform
@@ -92,6 +102,12 @@ void platformLifecycleAdd(::lifecycle::LifecycleManager& lifecycleManager, uint8
 namespace systems
 {
 ::can::ICanSystem& getCanSystem() { return *::platform::canSystem; }
+#ifdef PLATFORM_SUPPORT_ETHERNET
+::ethernet::IEthernetDriverSystem& getEthernetSystem()
+{
+    return *::platform::ethernetDriverSystem;
+}
+#endif
 } // namespace systems
 
 int main()

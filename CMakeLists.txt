@@ -130,6 +130,8 @@ if (BUILD_EXECUTABLE STREQUAL "referenceApp")
     if (BUILD_TARGET_PLATFORM STREQUAL "S32K148EVB")
         set(OPENBSW_PLATFORM_DIR
             "${CMAKE_CURRENT_SOURCE_DIR}/platforms/s32k1xx")
+    elseif (OPENBSW_PLATFORM STREQUAL "stm32")
+        set(OPENBSW_PLATFORM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/platforms/stm32")
     else ()
         set(OPENBSW_PLATFORM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/platforms/posix")
     endif ()

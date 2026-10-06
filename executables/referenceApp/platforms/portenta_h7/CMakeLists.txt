@@ -1,6 +1,9 @@
 # Arduino Portenta H7 (Cortex-M7 core) platform for referenceApp
 
 add_subdirectory(bspConfiguration)
+if (PLATFORM_SUPPORT_ETHERNET)
+    add_subdirectory(ethConfiguration)
+endif ()
 add_subdirectory(safety)
 add_subdirectory(main)
 

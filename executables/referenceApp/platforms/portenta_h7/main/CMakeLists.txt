@@ -19,6 +19,12 @@ if (PORTENTA_H7_CONSOLE STREQUAL "USB_CDC")
     target_link_libraries(main PRIVATE bspUsbCdc)
 endif ()
 
+if (PLATFORM_SUPPORT_ETHERNET)
+    target_sources(main PRIVATE src/os/isr/isr_eth.cpp
+                                src/systems/PortentaEthernetSystem.cpp)
+    target_link_libraries(main PRIVATE bspEthernet ethConfiguration)
+endif ()
+
 target_include_directories(main PUBLIC include)
 
 target_link_libraries(

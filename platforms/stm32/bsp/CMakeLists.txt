@@ -18,6 +18,11 @@ else ()
         add_subdirectory(bspUsbCdc)
     endif ()
 
+    # Ethernet MAC driver - currently H7 only
+    if (PLATFORM_SUPPORT_ETHERNET AND STM32_FAMILY STREQUAL "H7")
+        add_subdirectory(bspEthernet)
+    endif ()
+
     # CAN transceiver - selected by chip family
     if (CAN_TYPE STREQUAL "BXCAN")
         add_subdirectory(bxCanTransceiver)
