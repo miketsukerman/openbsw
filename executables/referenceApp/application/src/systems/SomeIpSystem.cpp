@@ -32,6 +32,77 @@ namespace
 
 static constexpr auto multicastIp     = ::ip::make_ip4(225, 0, 0, 1);
 static constexpr auto remoteServiceIp = ::ip::make_ip4(192, 168, 0, 20);
+static constexpr uint16_t providedServiceId   = 0xCAFEU;
+static constexpr uint16_t consumedServiceId   = 0xBABEU;
+static constexpr uint16_t defaultInstanceId   = 1U;
+static constexpr uint8_t defaultMajorVersion  = 1U;
+static constexpr uint32_t providedServiceTtl  = 10U;
+static constexpr uint32_t consumedServiceTtl  = 1U;
+static constexpr uint16_t exampleEventGroupId = 0x8001U;
+static constexpr uint16_t servicePort         = 30501U;
+static constexpr uint16_t clientPort          = 30502U;
+
+constexpr ::someip::ServiceDescription makeServiceDescription(
+    ::someip::service_id::type const serviceId,
+    ::someip::instance_id::type const instanceId,
+    ::someip::major_version::type const majorVersion,
+    ::someip::eventgroup_id::type const eventGroup,
+    ::someip::ttl::type const ttl,
+    ::ip::IPAddress const ipAddress,
+    ::someip::port::type const port,
+    ::someip::proto::type const proto)
+{
+    return {
+        /* minorVersion */ 0U,
+        /* ttl */ ttl,
+        /* serviceId */ serviceId,
+        /* instanceId */ instanceId,
+        /* eventGroup */ eventGroup,
+        /* ipAddress */ ipAddress,
+        /* port */ port,
+        /* proto */ proto,
+        /* majorVersion */ majorVersion};
+}
+
+static constexpr ::someip::ServiceDescription providedEventGroupDescription = makeServiceDescription(
+    providedServiceId,
+    defaultInstanceId,
+    defaultMajorVersion,
+    exampleEventGroupId,
+    providedServiceTtl,
+    ::eth0::IP_ADDRESS,
+    servicePort,
+    ::someip::proto::SD_L4_PROTO_UDP);
+
+static constexpr ::someip::ServiceDescription providedServiceDescription = makeServiceDescription(
+    providedServiceId,
+    defaultInstanceId,
+    defaultMajorVersion,
+    ::someip::eventgroup_id::ALL,
+    providedServiceTtl,
+    ::eth0::IP_ADDRESS,
+    servicePort,
+    ::someip::proto::SD_L4_PROTO_UDP);
+
+static constexpr ::someip::ServiceDescription consumedEventGroupDescription = makeServiceDescription(
+    consumedServiceId,
+    defaultInstanceId,
+    defaultMajorVersion,
+    exampleEventGroupId,
+    consumedServiceTtl,
+    remoteServiceIp,
+    clientPort,
+    ::someip::proto::SD_L4_PROTO_UDP);
+
+static constexpr ::someip::ServiceDescription consumedServiceDescription = makeServiceDescription(
+    consumedServiceId,
+    defaultInstanceId,
+    defaultMajorVersion,
+    ::someip::eventgroup_id::ALL,
+    consumedServiceTtl,
+    remoteServiceIp,
+    clientPort,
+    ::someip::proto::SD_L4_PROTO_UDP);
 
 } // namespace
 
@@ -60,37 +131,12 @@ void SomeIpSystem::init()
     /*
      * Register the service {{
      */
-
-    // event group
-    ::someip::ServiceDescription desc{
-        0U,
-        10U,
-        0xCAFEU,
-        1U,
-        0x8001,
-        ::eth0::IP_ADDRESS,
-        SERVICE_PORT,
-        ::someip::proto::SD_L4_PROTO_UDP,
-        1U};
-
     _providedServiceEg.setHandler(_providedServiceHandler);
-    _providedServiceEg.description = desc;
+    _providedServiceEg.description = providedEventGroupDescription;
     _stack.registerProvidedService(_providedServiceEg);
 
-    // service
-    desc
-        = {0U,
-           10U,
-           0xCAFEU,
-           1U,
-           ::someip::eventgroup_id::ALL,
-           ::eth0::IP_ADDRESS,
-           SERVICE_PORT,
-           ::someip::proto::SD_L4_PROTO_UDP,
-           1U};
-
     _providedService.setHandler(_providedServiceHandler);
-    _providedService.description = desc;
+    _providedService.description = providedServiceDescription;
     _stack.registerProvidedService(_providedService);
 
     /*
@@ -101,35 +147,11 @@ void SomeIpSystem::init()
      * Register the client {{
      */
 
-    // event group
-    desc
-        = {0U,
-           1U,
-           0xBABEU,
-           1U,
-           0x8001,
-           remoteServiceIp,
-           CLIENT_PORT,
-           ::someip::proto::SD_L4_PROTO_UDP,
-           1U};
-
-    _consumedServiceQueryEg.description = desc;
+    _consumedServiceQueryEg.description = consumedEventGroupDescription;
     _consumedServiceQueryEg.listener    = &_serviceListener;
     _stack.registerServiceQuery(_consumedServiceQueryEg);
 
-    // client
-    desc
-        = {0U,
-           1U,
-           0xBABEU,
-           1U,
-           ::someip::eventgroup_id::ALL,
-           remoteServiceIp,
-           CLIENT_PORT,
-           ::someip::proto::SD_L4_PROTO_UDP,
-           1U};
-
-    _consumedServiceQuery.description = desc;
+    _consumedServiceQuery.description = consumedServiceDescription;
     _consumedServiceQuery.listener    = &_serviceListener;
     _stack.registerServiceQuery(_consumedServiceQuery);
 

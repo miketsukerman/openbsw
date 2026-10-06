@@ -64,4 +64,17 @@ bool containsEventGroup(ServiceDescription const& desc)
     return (desc.eventGroup != eventgroup_id::ALL);
 }
 
+ServiceKey getServiceKey(ServiceDescription const& desc)
+{
+    return {desc.serviceId, desc.instanceId, desc.eventGroup, desc.majorVersion};
+}
+
+void setServiceKey(ServiceDescription& desc, ServiceKey const& key)
+{
+    desc.serviceId    = key.serviceId;
+    desc.instanceId   = key.instanceId;
+    desc.eventGroup   = key.eventGroup;
+    desc.majorVersion = key.majorVersion;
+}
+
 } // namespace someip

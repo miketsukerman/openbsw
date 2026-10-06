@@ -17,6 +17,14 @@
 
 namespace someip
 {
+struct ServiceKey
+{
+    service_id::type serviceId;
+    instance_id::type instanceId;
+    eventgroup_id::type eventGroup;
+    major_version::type majorVersion;
+};
+
 /*
  * Note: This structure is not properly aligned and thus
  * "Composite type has padding after field 'majorVersion'" warning pops up on
@@ -41,6 +49,8 @@ bool matches(ServiceDescription const&, ServiceDescription const&);
 bool isInstanceOf(ServiceDescription const&, ServiceDescription const&);
 bool isEventgroupOfService(ServiceDescription const&, ServiceDescription const&);
 bool containsEventGroup(ServiceDescription const&);
+ServiceKey getServiceKey(ServiceDescription const&);
+void setServiceKey(ServiceDescription&, ServiceKey const&);
 
 /*
  * inline implementation

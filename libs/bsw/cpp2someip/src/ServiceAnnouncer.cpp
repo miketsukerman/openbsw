@@ -561,9 +561,7 @@ void ServiceAnnouncer::getSessionInfoForNextMessage(uint16_t& sessionId, bool& r
 
 void ServiceAnnouncer::processTaskOffer(ServiceAnnouncerTask const& task)
 {
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription service(task.getService());
     addOffer(service);
 }
 
@@ -579,25 +577,19 @@ void ServiceAnnouncer::processTaskSubscribe(ServiceAnnouncerTask const& task)
         return;
     }
 
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription service(task.getService());
     addSubscribe(service);
 }
 
 void ServiceAnnouncer::processTaskSubscribeAck(ServiceAnnouncerTask const& task)
 {
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription const& service = task.getService();
     addSubscribeAck(service);
 }
 
 void ServiceAnnouncer::processTaskSubscribeNack(ServiceAnnouncerTask const& task)
 {
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription const& service = task.getService();
     addSubscribeNack(service);
 }
 
@@ -608,9 +600,7 @@ void ServiceAnnouncer::processTaskSubscribeAckMulticast(ServiceAnnouncerTask con
         return;
     }
 
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription const& service = task.getService();
     addSubscribeAckMulticast(service);
 }
 
@@ -621,9 +611,7 @@ void ServiceAnnouncer::processTaskUnsubscribe(ServiceAnnouncerTask const& task)
         return;
     }
 
-    auto service = ::someip::make<ServiceDescription>();
-    task.copyTo(service);
-
+    ServiceDescription service(task.getService());
     addUnsubscribe(service);
 }
 
