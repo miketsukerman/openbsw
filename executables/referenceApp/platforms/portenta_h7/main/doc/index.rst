@@ -29,6 +29,7 @@ script, and lifecycle systems for the Arduino Portenta H7 board:
    "Flash", "2 MB (application at 0x08040000, after the 256 KB Arduino bootloader)"
    "SRAM", "512 KB AXI SRAM (D1 domain) at 0x24000000"
    "CAN", "FDCAN1 - PH14 (RX) / PH13 (TX), AF9, 500 kbit/s, Hat Carrier transceiver"
+   "Ethernet", "10/100 RMII + LAN8742AI PHY, RJ45 on Hat Carrier, lwIP + SOME/IP demo"
    "Debug UART", "USART1 - PA9 TX (AF7), 115200 baud, Hat Carrier header pins 8/10"
    "User LED", "Green RGB LED on PK6 (active-low)"
    "Debug interface", "Hat Carrier JTAG/SWD header; DFU bootloader as fallback"

@@ -22,6 +22,7 @@ Find the detailed information about each module below:
    StaticBsp
    systems/CanSystem
    systems/UsbSystem
+   systems/EthernetSystem
 
 .. csv-table::
    :widths: 30, 70
@@ -32,3 +33,4 @@ Find the detailed information about each module below:
    :ref:`portenta_h7_StaticBsp`, "Static BSP - pre-lifecycle peripheral init"
    :ref:`portenta_h7_CanSystem`, "CAN System (FDCAN1, 500 kbit/s)"
    :ref:`portenta_h7_UsbSystem`, "USB System (USB-CDC console on USB-C)"
+   :ref:`portenta_h7_EthernetSystem`, "Ethernet System (RMII + LAN8742AI, lwIP, SOME/IP)"
