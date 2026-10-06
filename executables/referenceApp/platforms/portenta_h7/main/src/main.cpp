@@ -13,6 +13,9 @@
 #include "lifecycle/StaticBsp.h"
 #include "mcu/mcu.h"
 #include "systems/CanSystem.h"
+#if defined(CONSOLE_OVER_USB_CDC)
+#include "systems/UsbSystem.h"
+#endif
 
 #include <etl/alignment.h>
 #include <lifecycle/LifecycleManager.h>
@@ -34,8 +37,8 @@ void SystemInit()
     // Green LED ON: PK6 = LEDG, active low (output push-pull)
     static constexpr uint8_t LED_PIN = 6U;
     GPIOK->MODER &= ~(3U << (LED_PIN * 2U));
-    GPIOK->MODER |= (1U << (LED_PIN * 2U));   // GPIO output mode
-    GPIOK->BSRR = (1U << (LED_PIN + 16U));    // Drive low -> LED on
+    GPIOK->MODER |= (1U << (LED_PIN * 2U)); // GPIO output mode
+    GPIOK->BSRR = (1U << (LED_PIN + 16U));  // Drive low -> LED on
 
     // Early USART1 TX (PA9 AF7, 115200 @ 120 MHz APB2 kernel clock), usable
     // before the BSP UART driver is initialized.
@@ -67,9 +70,18 @@ StaticBsp staticBsp;
 StaticBsp& getStaticBsp() { return staticBsp; }
 
 ::etl::typed_storage<::systems::CanSystem> canSystem;
+#if defined(CONSOLE_OVER_USB_CDC)
+::etl::typed_storage<::systems::UsbSystem> usbSystem;
+#endif
 
 void platformLifecycleAdd(::lifecycle::LifecycleManager& lifecycleManager, uint8_t const level)
 {
+#if defined(CONSOLE_OVER_USB_CDC)
+    if (level == 1U)
+    {
+        lifecycleManager.addComponent("usb", usbSystem.create(TASK_BSP), level);
+    }
+#endif
     if (level == 2U)
     {
         lifecycleManager.addComponent("can", canSystem.create(TASK_CAN), level);

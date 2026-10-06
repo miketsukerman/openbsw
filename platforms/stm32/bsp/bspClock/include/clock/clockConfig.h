@@ -19,6 +19,12 @@ extern "C"
 // before main(); must not use heap, RTOS primitives, or BSW services.
 void configurePll(void);
 
+// H7 only: enable the 48 MHz USB kernel clock (HSI48 trimmed by the CRS
+// from USB SOF) and select it in RCC->D2CCIP2R. Fail-safe: returns false
+// on timeout without affecting the core clock setup.
+// Returns true (non-zero) on success.
+int configureUsbClock(void);
+
 #ifdef __cplusplus
 }
 #endif

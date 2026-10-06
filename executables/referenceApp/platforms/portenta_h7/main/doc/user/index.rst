@@ -21,6 +21,7 @@ Find the detailed information about each module below:
    main
    StaticBsp
    systems/CanSystem
+   systems/UsbSystem
 
 .. csv-table::
    :widths: 30, 70
@@ -30,3 +31,4 @@ Find the detailed information about each module below:
    :ref:`portenta_h7_main_entry`, "Main File and boot sequence"
    :ref:`portenta_h7_StaticBsp`, "Static BSP - pre-lifecycle peripheral init"
    :ref:`portenta_h7_CanSystem`, "CAN System (FDCAN1, 500 kbit/s)"
+   :ref:`portenta_h7_UsbSystem`, "USB System (USB-CDC console on USB-C)"

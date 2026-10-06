@@ -26,6 +26,11 @@ set(OPENBSW_ARM_FPU
 set(BUILD_TARGET_RTOS
     "FREERTOS"
     CACHE STRING "")
+# Console device: USB_CDC (virtual COM port on the USB-C connector, default)
+# or UART (USART1 on the Hat Carrier 40-pin header, pins 8/10).
+set(PORTENTA_H7_CONSOLE
+    "USB_CDC"
+    CACHE STRING "Portenta H7 console device: USB_CDC or UART")
 set(PLATFORM_SUPPORT_CAN
     ON
     CACHE BOOL "" FORCE)

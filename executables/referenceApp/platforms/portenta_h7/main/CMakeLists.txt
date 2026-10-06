@@ -13,6 +13,12 @@ add_library(
     src/lifecycle/StaticBsp.cpp
     src/main.cpp)
 
+if (PORTENTA_H7_CONSOLE STREQUAL "USB_CDC")
+    target_sources(main PRIVATE src/os/isr/isr_usb.cpp src/systems/UsbSystem.cpp)
+    target_compile_definitions(main PRIVATE CONSOLE_OVER_USB_CDC=1)
+    target_link_libraries(main PRIVATE bspUsbCdc)
+endif ()
+
 target_include_directories(main PUBLIC include)
 
 target_link_libraries(

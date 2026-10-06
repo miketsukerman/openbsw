@@ -38,7 +38,7 @@ static constexpr uint32_t CLK_TIMEOUT = 6400000U;
 
 namespace
 {
-bool waitSet(uint32_t volatile const& reg, uint32_t mask)
+bool waitSet(uint32_t const volatile& reg, uint32_t mask)
 {
     uint32_t t = CLK_TIMEOUT;
     while ((reg & mask) != mask)
@@ -153,4 +153,26 @@ extern "C" void configurePll()
     SCB_EnableDCache();
 
     SystemCoreClock = 480000000U;
+}
+
+extern "C" int configureUsbClock(void)
+{
+    // --- 48 MHz USB kernel clock: HSI48 trimmed by the CRS -------------------
+    RCC->CR |= RCC_CR_HSI48ON;
+    if (!waitSet(RCC->CR, RCC_CR_HSI48RDY))
+    {
+        return 0;
+    }
+
+    // CRS: auto-trim HSI48 against the 1 kHz USB SOF (SYNCSRC = 0b10).
+    // Reset defaults of RELOAD (47999) and FELIM match the 48 MHz/1 kHz pair.
+    RCC->APB1HENR |= RCC_APB1HENR_CRSEN;
+    (void)RCC->APB1HENR; // Read-back for clock propagation
+    CRS->CFGR = (CRS->CFGR & ~CRS_CFGR_SYNCSRC) | CRS_CFGR_SYNCSRC_1;
+    CRS->CR |= CRS_CR_AUTOTRIMEN | CRS_CR_CEN;
+
+    // Select HSI48 as the USB kernel clock (USBSEL = 0b11).
+    RCC->D2CCIP2R |= RCC_D2CCIP2R_USBSEL;
+
+    return 1;
 }

@@ -42,7 +42,9 @@ Scope
 The reference application on the STM32 boards provides:
 
 - lifecycle management and the serial console over the ST-LINK virtual COM port
-  (Nucleo boards) or the 40-pin HAT header UART (Portenta H7 on the Hat Carrier),
+  (Nucleo boards) or - on the Portenta H7 - a USB-CDC virtual COM port on the
+  USB-C connector (default) with the 40-pin HAT header UART as a build-time
+  fallback,
 - CAN communication (FDCAN on the STM32G474RE and STM32H747XI, bxCAN on the
   STM32F413ZH),
 - DoCAN transport and UDS diagnostics (see :ref:`feature_diagnostics`),
@@ -86,9 +88,24 @@ The Portenta H7 port targets the **Cortex-M7 core only** (480 MHz, VOS0 boost);
 the Cortex-M4 core is left parked. The board is used mounted on the
 **Portenta Hat Carrier**:
 
-- **Console UART**: USART1 (PA9 TX / PA10 RX, 115 200 baud) is routed to the
-  carrier's 40-pin HAT header, pin 8 (TX) and pin 10 (RX). Connect a
-  3.3 V USB-UART adapter to these pins and a GND pin.
+- **Console (default, USB-C)**: the application enumerates as a USB-CDC
+  (virtual COM) device on the Portenta's USB-C connector - the same cable used
+  for flashing. On Linux it appears as ``/dev/ttyACM0`` (any baud rate); on
+  Windows as a ``COMx`` port. No adapter hardware is needed. Output printed
+  before the host opens the terminal (early boot, USB enumeration takes about
+  a second) is dropped, not buffered; the very first boot messages are only
+  visible on the UART. The USB stack is a vendored subset of
+  `TinyUSB <https://github.com/hathach/tinyusb>`_ (``libs/3rdparty/tinyusb``)
+  driving USB1 OTG_HS with its internal full-speed PHY (PB14/PB15), clocked
+  from HSI48 with CRS auto-trim. The device uses the pid.codes **test** VID/PID
+  ``1209:0001``, which must not be used outside the lab - set a proper ID in
+  ``platforms/stm32/bsp/bspUsbCdc/src/usb_descriptors.c`` before distributing
+  binaries.
+- **Console UART (fallback)**: configure with ``-DPORTENTA_H7_CONSOLE=UART`` to
+  bind the console to USART1 (PA9 TX / PA10 RX, 115 200 baud) on the carrier's
+  40-pin HAT header, pin 8 (TX) and pin 10 (RX). Connect a 3.3 V USB-UART
+  adapter to these pins and a GND pin. The USART1 early-boot banner is emitted
+  regardless of the selected console.
 - **CAN**: FDCAN1 (PH13 TX / PH14 RX) is wired to the carrier's onboard
   high-speed CAN FD transceiver; connect the bus to the CANH/CANL screw
   terminals. Bit rate is 500 kbit/s; add 120 Ohm termination if the carrier is
@@ -112,8 +129,9 @@ bootloader, so the factory bootloader is preserved and both flashing flows work:
       arm-none-eabi-objcopy -O binary app.referenceApp.elf app.referenceApp.bin
       dfu-util -a 0 -d 2341:035b -s 0x08040000:leave -D app.referenceApp.bin
 
-Current limitations (first iteration): the Cortex-M4 core, Ethernet, USB,
-microSD and the watchdog/safety features are not used yet.
+Current limitations (first iteration): the Cortex-M4 core, Ethernet,
+microSD and the watchdog/safety features are not used yet; USB is used for
+the CDC console only.
 
 Build environment
 -----------------

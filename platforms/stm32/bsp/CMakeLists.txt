@@ -13,6 +13,11 @@ else ()
     add_subdirectory(bspIo)
     add_subdirectory(bspCan)
 
+    # USB-CDC console (TinyUSB) - currently H7 only
+    if (STM32_FAMILY STREQUAL "H7")
+        add_subdirectory(bspUsbCdc)
+    endif ()
+
     # CAN transceiver - selected by chip family
     if (CAN_TYPE STREQUAL "BXCAN")
         add_subdirectory(bxCanTransceiver)
