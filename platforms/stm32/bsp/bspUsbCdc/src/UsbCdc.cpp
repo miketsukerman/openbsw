@@ -23,10 +23,48 @@ namespace
 {
 // On the STM32H747 both OTG controllers exist, so TinyUSB's STM32 port maps
 // rhport 0 to USB2 OTG_FS and rhport 1 to USB1 OTG_HS. The Portenta H7's
-// USB-C connector is wired to USB1 OTG_HS (internal FS PHY).
+// USB-C data lines are wired to an external USB3320 ULPI high-speed PHY
+// connected to USB1 OTG_HS; the internal full-speed PHY (PB14/PB15) is not
+// routed to the connector.
 constexpr uint8_t USB_RHPORT = 1U;
 
+// All OTG_HS ULPI signals use alternate function 10.
+constexpr uint32_t ULPI_AF = 10U;
+
 bool initialized = false;
+
+struct UlpiPin
+{
+    GPIO_TypeDef* port;
+    uint8_t pin;
+};
+
+// ULPI bus wiring on the Portenta H7 (matches the Arduino core and the
+// Zephyr board definition).
+constexpr UlpiPin ULPI_PINS[] = {
+    {GPIOA, 3U},  // ULPI_D0
+    {GPIOA, 5U},  // ULPI_CK (60 MHz from the USB3320)
+    {GPIOB, 0U},  // ULPI_D1
+    {GPIOB, 1U},  // ULPI_D2
+    {GPIOB, 5U},  // ULPI_D7
+    {GPIOB, 10U}, // ULPI_D3
+    {GPIOB, 11U}, // ULPI_D4
+    {GPIOB, 12U}, // ULPI_D5
+    {GPIOB, 13U}, // ULPI_D6
+    {GPIOC, 0U},  // ULPI_STP
+    {GPIOH, 4U},  // ULPI_NXT
+    {GPIOI, 11U}, // ULPI_DIR
+};
+
+void configureUlpiPin(GPIO_TypeDef* const port, uint8_t const pin)
+{
+    port->MODER = (port->MODER & ~(3U << (pin * 2U))) | (2U << (pin * 2U)); // AF mode
+    port->OSPEEDR |= (3U << (pin * 2U));                                    // Very high speed
+    port->PUPDR &= ~(3U << (pin * 2U));                                     // No pull
+    uint8_t const idx   = (pin < 8U) ? 0U : 1U;
+    uint8_t const shift = static_cast<uint8_t>((pin % 8U) * 4U);
+    port->AFR[idx]      = (port->AFR[idx] & ~(0xFUL << shift)) | (ULPI_AF << shift);
+}
 } // namespace
 
 namespace bsp
@@ -56,28 +94,37 @@ void UsbCdc::init()
         }
     }
 
-    // USB D- (PB14) / D+ (PB15), AF12 (OTG_HS in FS mode, internal PHY)
-    constexpr uint8_t DM_PIN = 14U;
-    constexpr uint8_t DP_PIN = 15U;
-    constexpr uint8_t USB_AF = 12U;
-
-    RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN;
+    // GPIO clocks for all ports carrying ULPI signals plus PH1 (oscillator
+    // enable).
+    RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN | RCC_AHB4ENR_GPIOBEN | RCC_AHB4ENR_GPIOCEN
+                    | RCC_AHB4ENR_GPIOHEN | RCC_AHB4ENR_GPIOIEN;
     (void)RCC->AHB4ENR; // Read-back for clock propagation
 
-    GPIOB->MODER &= ~((3U << (DM_PIN * 2U)) | (3U << (DP_PIN * 2U)));
-    GPIOB->MODER |= (2U << (DM_PIN * 2U)) | (2U << (DP_PIN * 2U));   // AF mode
-    GPIOB->OSPEEDR |= (3U << (DM_PIN * 2U)) | (3U << (DP_PIN * 2U)); // Very high speed
-    GPIOB->AFR[1] &= ~((0xFUL << ((DM_PIN - 8U) * 4U)) | (0xFUL << ((DP_PIN - 8U) * 4U)));
-    GPIOB->AFR[1] |= (static_cast<uint32_t>(USB_AF) << ((DM_PIN - 8U) * 4U))
-                     | (static_cast<uint32_t>(USB_AF) << ((DP_PIN - 8U) * 4U));
+    // PH1 enables the on-board oscillator that clocks the USB3320 ULPI PHY
+    // (and the Ethernet PHY). Drive it high and give the oscillator and PHY
+    // time to start before initializing the OTG core: the core soft reset
+    // needs the 60 MHz ULPI clock to complete.
+    GPIOH->MODER = (GPIOH->MODER & ~(3U << (1U * 2U))) | (1U << (1U * 2U)); // Output
+    GPIOH->BSRR  = (1U << 1U);
+    {
+        // ~2 ms at 480 MHz; generous oscillator/PHY start-up margin.
+        for (uint32_t volatile i = 0U; i < 1000000U; ++i) {}
+    }
 
-    // USB1 OTG_HS peripheral clock
-    RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN;
+    // ULPI bus pins, AF10, very high speed.
+    for (UlpiPin const& ulpiPin : ULPI_PINS)
+    {
+        configureUlpiPin(ulpiPin.port, ulpiPin.pin);
+    }
+
+    // USB1 OTG_HS peripheral clock + ULPI interface clock.
+    RCC->AHB1ENR |= RCC_AHB1ENR_USB1OTGHSEN | RCC_AHB1ENR_USB1OTGHSULPIEN;
     (void)RCC->AHB1ENR; // Read-back for clock propagation
 
-    // TinyUSB: device stack on USB1 OTG_HS. dcd_init() selects the internal
-    // FS PHY (CFG_TUD_MAX_SPEED = full speed), forces device mode, and
-    // overrides B-session valid (no VBUS sensing wired on the Portenta).
+    // TinyUSB: device stack on USB1 OTG_HS. dcd_init() selects the ULPI
+    // interface (CFG_TUD_MAX_SPEED = high speed + the core reports a ULPI
+    // HS PHY), forces device mode, and overrides B-session valid (no VBUS
+    // sensing wired on the Portenta).
     initialized = tud_init(USB_RHPORT);
 }
 

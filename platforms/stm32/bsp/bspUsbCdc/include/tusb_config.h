@@ -9,13 +9,13 @@
  ********************************************************************************/
 
 /**
- * TinyUSB configuration: device-only, single CDC-ACM interface, full speed.
+ * TinyUSB configuration: device-only, single CDC-ACM interface, high speed.
  *
- * The STM32H747's USB1 OTG_HS controller is used with its internal
- * full-speed PHY (the configuration the Arduino Portenta H7 bootloader
- * uses), so the maximum speed is forced to full speed - this makes the
- * DWC2 driver select the internal FS transceiver (GUSBCFG.PHYSEL) instead
- * of the ULPI interface.
+ * On the Arduino Portenta H7 the USB-C data lines are wired to an external
+ * USB3320 ULPI high-speed PHY connected to the STM32H747's USB1 OTG_HS
+ * controller (the internal full-speed PHY on PB14/PB15 is not routed to
+ * the connector). High speed therefore has to be enabled so that the DWC2
+ * driver selects the ULPI interface.
  */
 
 #ifndef TUSB_CONFIG_H_
@@ -42,8 +42,8 @@ extern "C"
 #define CFG_TUD_ENABLED 1
 #define CFG_TUH_ENABLED 0
 
-// Internal FS PHY on the OTG_HS controller -> full speed only.
-#define CFG_TUD_MAX_SPEED OPT_MODE_FULL_SPEED
+// External ULPI HS PHY (USB3320) on the OTG_HS controller.
+#define CFG_TUD_MAX_SPEED OPT_MODE_HIGH_SPEED
 
 // No cache-sensitive DMA: the DWC2 driver runs in slave (FIFO) mode.
 #define CFG_TUSB_MEM_SECTION
@@ -52,16 +52,17 @@ extern "C"
 #define CFG_TUD_ENDPOINT0_SIZE 64
 
 //------------- Class -------------//
-#define CFG_TUD_CDC 1
-#define CFG_TUD_MSC 0
-#define CFG_TUD_HID 0
-#define CFG_TUD_MIDI 0
+#define CFG_TUD_CDC    1
+#define CFG_TUD_MSC    0
+#define CFG_TUD_HID    0
+#define CFG_TUD_MIDI   0
 #define CFG_TUD_VENDOR 0
 
-// CDC FIFO sizes (must be multiples of the 64-byte FS endpoint size).
-#define CFG_TUD_CDC_RX_BUFSIZE 256
-#define CFG_TUD_CDC_TX_BUFSIZE 256
-#define CFG_TUD_CDC_EP_BUFSIZE 64
+// CDC FIFO sizes (must be multiples of the endpoint size: 512 bytes at
+// high speed).
+#define CFG_TUD_CDC_RX_BUFSIZE 512
+#define CFG_TUD_CDC_TX_BUFSIZE 512
+#define CFG_TUD_CDC_EP_BUFSIZE 512
 
 #ifdef __cplusplus
 }

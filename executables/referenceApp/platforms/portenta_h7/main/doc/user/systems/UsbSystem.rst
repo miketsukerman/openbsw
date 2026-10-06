@@ -25,9 +25,12 @@ The actual USB device driver lives in the platform module
 ``platforms/stm32/bsp/bspUsbCdc`` (class ``bsp::UsbCdc``), which wraps a
 vendored subset of `TinyUSB <https://github.com/hathach/tinyusb>`_
 (``libs/3rdparty/tinyusb``). The hardware configuration is the one used by the
-Arduino Portenta H7: **USB1 OTG_HS with its internal full-speed PHY** on
-PB14 (D-) / PB15 (D+), alternate function 12, clocked from **HSI48 with CRS**
-(clock recovery trimmed against USB SOF packets).
+Arduino Portenta H7: **USB1 OTG_HS through the external USB3320 ULPI
+high-speed PHY** (ULPI bus on PA3, PA5, PB0, PB1, PB5, PB10-PB13, PC0, PH4
+and PI11, alternate function 10). The ULPI PHY is clocked by the on-board
+oscillator, which is enabled via **PH1**; the OTG core's 48 MHz kernel clock
+comes from **HSI48 with CRS** (clock recovery trimmed against USB SOF
+packets).
 
 Lifecycle
 ---------
@@ -36,8 +39,9 @@ Lifecycle
 - ``run()`` (lifecycle level 1, before the console-facing systems):
 
   - calls ``bsp::UsbCdc::init()``, which enables the USB 48 MHz kernel clock
-    (HSI48 + CRS), the USB 3.3 V level detector, the USB1 OTG_HS peripheral
-    clock and the PB14/PB15 pins, and initializes the TinyUSB device stack.
+    (HSI48 + CRS), the USB 3.3 V level detector, the PH1 oscillator enable,
+    the USB1 OTG_HS peripheral and ULPI clocks and the twelve ULPI bus pins,
+    and initializes the TinyUSB device stack.
     Every step is fail-safe: if USB bring-up fails, the driver stays inactive
     and the rest of the system boots normally (console output is dropped).
   - configures the ``OTG_HS`` interrupt (NVIC priority 6, compatible with

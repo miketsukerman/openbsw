@@ -20,9 +20,10 @@ namespace bsp
 /**
  * USB-CDC (virtual COM port) console driver built on TinyUSB.
  *
- * Targets the STM32H747's USB1 OTG_HS controller with its internal
- * full-speed PHY (DP = PB15, DM = PB14, AF12) - the configuration used by
- * the Arduino Portenta H7's USB-C connector.
+ * Targets the STM32H747's USB1 OTG_HS controller through the external
+ * USB3320 ULPI high-speed PHY - the configuration used by the Arduino
+ * Portenta H7's USB-C connector (the internal full-speed PHY on PB14/PB15
+ * is not routed to the connector).
  *
  * Usage:
  * - call init() once (enables clocks, GPIO, TinyUSB device stack),

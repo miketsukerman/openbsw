@@ -96,8 +96,8 @@ the Cortex-M4 core is left parked. The board is used mounted on the
   a second) is dropped, not buffered; the very first boot messages are only
   visible on the UART. The USB stack is a vendored subset of
   `TinyUSB <https://github.com/hathach/tinyusb>`_ (``libs/3rdparty/tinyusb``)
-  driving USB1 OTG_HS with its internal full-speed PHY (PB14/PB15), clocked
-  from HSI48 with CRS auto-trim. The device uses the pid.codes **test** VID/PID
+  driving USB1 OTG_HS through the board's external USB3320 ULPI high-speed
+  PHY (480 Mbit/s), with the on-board oscillator enabled via PH1. The device uses the pid.codes **test** VID/PID
   ``1209:0001``, which must not be used outside the lab - set a proper ID in
   ``platforms/stm32/bsp/bspUsbCdc/src/usb_descriptors.c`` before distributing
   binaries.
